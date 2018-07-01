@@ -1,18 +1,19 @@
 import json
 import logging
+import os
 
 from slackclient import SlackClient
 from urllib import parse
 
 from flask import Flask, request
 
-ANNOUNCEMENTS_CHANNEL_ID = 'CAK4W6E2J'
+ANNOUNCEMENTS_CHANNEL_ID = os.environ['ANNOUNCEMENTS_CHANNEL_ID']
 
 
 app = Flask(__name__)
 
 
-app.config.from_pyfile('config.py')
+app.config['SLACK_TOKEN'] = os.environ['SLACK_TOKEN']
 
 
 # If app isn't being run by itself, use gunicorn logger
@@ -48,8 +49,8 @@ def events():
                                                     channel['id'],
                                                     channel['name'])
         if event['type'] == 'channel_unarchive':
-            text = (u'<@{}> unarchived <#{}>.'
-                    ).format(event['user'], event['channel'])
+            text = (u'<@{}> unarchived <#{}>.').format(event['user'],
+                                                       event['channel'])
 
         if text:
             sc.api_call('chat.postMessage', channel=ANNOUNCEMENTS_CHANNEL_ID,
