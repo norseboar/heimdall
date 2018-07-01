@@ -1,0 +1,9 @@
+# Files
+config.py
+
+# Dependencies
+heimdall-env/
+
+# Python temp
+__pycache__/
+*.pyc
