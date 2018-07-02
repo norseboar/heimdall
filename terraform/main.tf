@@ -210,24 +210,6 @@ resource "aws_route53_record" "cname" {
   }
 }
 
-## Secrets
-
-resource "aws_ssm_parameter" "secret" {
-  name        = "/heimdall/slack-token"
-  description = "Slack API token"
-  type        = "SecureString"
-  value       = "changeme"
-
-  tags {
-    Config = "heimdall"
-  }
-
-  lifecycle {
-    # Real value is configured after creation
-    ignore_changes = ["value"]
-  }
-}
-
 ## ECS
 
 resource "aws_ecs_cluster" "cluster" {
