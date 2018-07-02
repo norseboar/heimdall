@@ -7,3 +7,7 @@ heimdall-env/
 # Python temp
 __pycache__/
 *.pyc
+
+# Terraform
+.terraform/
+terraform.tfstate.backup
