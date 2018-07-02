@@ -12,15 +12,15 @@ ANNOUNCEMENTS_CHANNEL_ID = os.environ['ANNOUNCEMENTS_CHANNEL_ID']
 
 app = Flask(__name__)
 
+slack_client = SlackClient(os.environ['SLACK_TOKEN'])
 
-app.config['SLACK_TOKEN'] = os.environ['SLACK_TOKEN']
 
-
-# If app isn't being run by itself, use gunicorn logger
-if __name__ != '__main__':
-    gunicorn_logger = logging.getLogger('gunicorn.error')
-    app.logger.handlers = gunicorn_logger.handlers
-    app.logger.setLevel(gunicorn_logger.level)
+def _slack_api_call(*args, **kwargs):
+    response = slack_client.api_call(*args, **kwargs)
+    if not response['ok']:
+        app.logger.info('Response: %s', response)
+        raise RuntimeError('Slack API returned non-ok response')
+    return response
 
 
 @app.route('/')
@@ -40,7 +40,7 @@ def events():
 
     elif request_type == 'event_callback':
         event = data['event']
-        sc = SlackClient(app.config['SLACK_TOKEN'])
+        app.logger.info('Received event: %s', event)
         text = ''
 
         if event['type'] == 'channel_created':
@@ -53,8 +53,7 @@ def events():
                                                        event['channel'])
 
         if text:
-            sc.api_call('chat.postMessage', channel=ANNOUNCEMENTS_CHANNEL_ID,
-                        text=text)
+            _slack_api_call('chat.postMessage', channel=ANNOUNCEMENTS_CHANNEL_ID, text=text)
             return ''
         else:
             app.logger.error('Event, but no response')
@@ -74,22 +73,20 @@ def things():
 
     if data['type'] == 'message_action':
         app.logger.info(data)
-        sc = SlackClient(app.config['SLACK_TOKEN'])
-
         message = data['message']
 
         if 'user' in message:
             user_id = message['user']
-            user_resp = sc.api_call('users.info', user=user_id)
+            user_resp = _slack_api_call('users.info', user=user_id)
             user_name = user_resp['user']['name']
         elif 'username' in message:
             user_name = message['username']
         else:
             user_name = 'None'
 
-        permalink_resp = sc.api_call('chat.getPermalink',
-                                     channel=data['channel']['id'],
-                                     message_ts=data['message']['ts'])
+        permalink_resp = _slack_api_call('chat.getPermalink',
+                                         channel=data['channel']['id'],
+                                         message_ts=data['message']['ts'])
         permalink = permalink_resp['permalink']
 
         things_title = u'{} in {}: {}'.format(
@@ -107,8 +104,7 @@ def things():
         text = (u'<{}|Add to Things> | <{}|Go to message>\n'
                 'From <@{}>\n'
                 '{}').format(things_url, permalink, user_name, message['text'])
-        sc.api_call('chat.postMessage',
-                    channel=u'@{}'.format(data['user']['name']), text=text)
+        _slack_api_call('chat.postMessage', channel=u'@{}'.format(data['user']['name']), text=text)
 
     return ''
 

@@ -1,5 +1,4 @@
 FROM ubuntu:18.04
-MAINTAINER <reed@outlook.com>
 
 ENV APT_INSTALL_OPTIONS="-y --no-install-recommends"
 
@@ -26,4 +25,5 @@ RUN useradd -ms /bin/bash heimdall
 USER heimdall
 
 # Run the app
-CMD gunicorn --bind 0.0.0.0:$PORT wsgi
+ADD entrypoint.sh /src/entrypoint.sh
+CMD /src/entrypoint.sh 0.0.0.0:$PORT
