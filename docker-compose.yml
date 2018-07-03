@@ -1,0 +1,14 @@
+version: "3.6"
+services:
+  app:
+    build: .
+    environment:
+      - ANNOUNCEMENTS_CHANNEL_ID=C0D7T48AY
+      - PORT=8080
+    ports:
+      - "8080:8080"
+    secrets:
+      - slack_token
+secrets:
+  slack_token:
+    file: ./slack_token.txt

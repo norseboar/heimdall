@@ -107,7 +107,3 @@ def things():
         _slack_api_call('chat.postMessage', channel=u'@{}'.format(data['user']['name']), text=text)
 
     return ''
-
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0')

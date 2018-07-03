@@ -1,5 +1,6 @@
 # Files
 config.py
+slack_token.txt
 
 # Dependencies
 heimdall-env/
