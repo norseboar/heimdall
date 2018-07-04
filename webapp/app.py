@@ -1,6 +1,6 @@
 import json
-import logging
 import os
+import re
 
 from slackclient import SlackClient
 from urllib import parse
@@ -21,6 +21,17 @@ def _slack_api_call(*args, **kwargs):
         app.logger.info('Response: %s', response)
         raise RuntimeError('Slack API returned non-ok response')
     return response
+
+
+def _username_from_match(match):
+    user_id = match.group(1)
+    resp = _slack_api_call('users.info', user=user_id)
+    return u'@{}'.format(resp['user']['name'])
+
+
+def _remove_message_formatting(message):
+    user_ids_pattern = '<@(U.*?)>'
+    return re.sub(user_ids_pattern, _username_from_match, message)
 
 
 @app.route('/')
@@ -53,7 +64,8 @@ def events():
                                                        event['channel'])
 
         if text:
-            _slack_api_call('chat.postMessage', channel=ANNOUNCEMENTS_CHANNEL_ID, text=text)
+            _slack_api_call('chat.postMessage',
+                            channel=ANNOUNCEMENTS_CHANNEL_ID, text=text)
             return ''
         else:
             app.logger.error('Event, but no response')
@@ -89,11 +101,12 @@ def things():
                                          message_ts=data['message']['ts'])
         permalink = permalink_resp['permalink']
 
-        things_title = u'{} in {}: {}'.format(
-            user_name, data['channel']['name'], message['text'][:80])
+        things_title = _remove_message_formatting(message['text'][:512])[:128]
+        things_notes = u'{} in {}\n{}'.format(
+            user_name, data['channel']['name'], permalink)
         things_query = parse.urlencode({
             'title': things_title,
-            'notes': permalink,
+            'notes': things_notes,
             'tags': 'slack'
         }, quote_via=parse.quote)
 
@@ -104,6 +117,7 @@ def things():
         text = (u'<{}|Add to Things> | <{}|Go to message>\n'
                 'From <@{}>\n'
                 '{}').format(things_url, permalink, user_name, message['text'])
-        _slack_api_call('chat.postMessage', channel=u'@{}'.format(data['user']['name']), text=text)
+        _slack_api_call('chat.postMessage',
+                        channel=u'@{}'.format(data['user']['name']), text=text)
 
     return ''
