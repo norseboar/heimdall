@@ -104,6 +104,33 @@ module "vpc" {
   }
 }
 
+resource "aws_network_acl" "public" {
+  vpc_id     = "${module.vpc.vpc_id}"
+  subnet_ids = ["${module.vpc.public_subnets}"]
+
+  tags = {
+    Name = "heimdall-public"
+  }
+}
+
+resource "aws_network_acl_rule" "public_ingress" {
+  network_acl_id = "${aws_network_acl.public.id}"
+  rule_number    = "100"
+  egress         = false
+  cidr_block     = "0.0.0.0/0"
+  protocol       = "all"
+  rule_action    = "allow"
+}
+
+resource "aws_network_acl_rule" "public_egress" {
+  network_acl_id = "${aws_network_acl.public.id}"
+  rule_number    = "100"
+  egress         = true
+  cidr_block     = "0.0.0.0/0"
+  protocol       = "all"
+  rule_action    = "allow"
+}
+
 resource "aws_security_group" "lb" {
   name_prefix = "heimdall-lb-"
   description = "Controls access to the ALB"
