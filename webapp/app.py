@@ -101,9 +101,9 @@ def things():
                                          message_ts=data['message']['ts'])
         permalink = permalink_resp['permalink']
 
-        things_title = _remove_message_formatting(message['text'][:512])[:128]
-        things_notes = u'{} in {}\n{}'.format(
-            user_name, data['channel']['name'], permalink)
+        things_title = u'{}: {}'.format(
+            user_name, _remove_message_formatting(message['text'][:512])[:128])
+        things_notes = u'In {}\n{}'.format(data['channel']['name'], permalink)
         things_query = parse.urlencode({
             'title': things_title,
             'notes': things_notes,
